@@ -1,1 +1,2 @@
-../env_variables
+vars_files:
+  - env_variables
