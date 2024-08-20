@@ -23,7 +23,7 @@
 
     - name: Download and add Kubernetes public signing key
       get_url:
-        url: https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key
+        url: https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key
         dest: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
         mode: '0644'
 
@@ -32,19 +32,66 @@
         repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://apt.kubernetes.io/ kubernetes-jammy main"
         state: present
 
-    - name: Installing required packages
+    - name: Install Docker's GPG key
+      get_url:
+        url: https://download.docker.com/linux/debian/gpg
+        dest: /usr/share/keyrings/docker-archive-keyring.gpg
+        mode: '0644'
+
+    - name: Set up Docker repository
+      command: >
+        echo "deb [arch={{ ansible_architecture }} signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable" |
+        tee /etc/apt/sources.list.d/docker.list > /dev/null
+      become: yes
+
+    - name: Install Docker Engine
       apt:
-        name: "{{ item }}"
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
         state: present
         update_cache: yes
-      loop: "{{ packages }}"
 
-    - name: Starting and Enabling the required services
+    - name: Enable and start Docker
       service:
-        name: "{{ item }}"
+        name: docker
         state: started
         enabled: yes
-      loop: "{{ services }}"
+
+    - name: Verify Docker installation
+      command: docker run hello-world
+      register: docker_hello_world
+      changed_when: docker_hello_world.rc == 0
+
+    - name: Install Kubernetes components
+      apt:
+        name:
+          - kubelet
+          - kubeadm
+          - kubectl
+        state: present
+        update_cache: yes
+
+    - name: Mark Kubernetes packages to hold
+      apt:
+        name:
+          - kubelet
+          - kubeadm
+          - kubectl
+        state: held
+
+    - name: Disable swap
+      command: swapoff -a
+      become: yes
+
+    - name: Comment out swap entry in /etc/fstab
+      lineinfile:
+        path: /etc/fstab
+        regexp: '^.*swap.*'
+        line: '# Swap entry'
+        state: present
+      become: yes
 
     - name: Allow Network Ports in UFW
       ufw:
