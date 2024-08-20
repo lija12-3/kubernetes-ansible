@@ -2,14 +2,21 @@
   vars_files:
     - env_variables
   tasks:
+    - name: Ensure /etc/apt/keyrings directory exists
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+
     - name: Add Kubernetes APT repository key
-      apt_key:
-        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
-        state: present
+      get_url:
+        url: https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key
+        dest: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+        mode: '0644'
 
     - name: Add Kubernetes APT repository
       apt_repository:
-        repo: "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-bookworm main"
+        repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://apt.kubernetes.io/ kubernetes-bookworm main"
         state: present
 
     - name: Installing required packages
@@ -17,21 +24,21 @@
         name: "{{ item }}"
         state: present
         update_cache: yes
-      loop: "{{ packages }}"  # Changed from `with_items` to `loop`
+      loop: "{{ packages }}"
 
     - name: Starting and Enabling the required services
       service:
         name: "{{ item }}"
         state: started
         enabled: yes
-      loop: "{{ services }}"  # Changed from `with_items` to `loop`
+      loop: "{{ services }}"
 
     - name: Allow Network Ports in UFW
       ufw:
         rule: allow
         name: "{{ item }}"
         state: enabled
-      loop: "{{ ports }}"  # Changed from `with_items` to `loop`
+      loop: "{{ ports }}"
 
     - name: Enabling Bridge Firewall Rule
       sysctl:
