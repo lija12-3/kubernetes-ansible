@@ -1,42 +1,42 @@
 ---
 - hosts: all
   vars_files:
-  - env_variables
+    - env_variables
   tasks:
-  - name: Add Kubernetes APT repository key
-    apt_key:
-      url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
-      state: present
+    - name: Add Kubernetes APT repository key
+      apt_key:
+        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+        state: present
 
-  - name: Add Kubernetes APT repository
-    apt_repository:
-      repo: "deb http://apt.kubernetes.io/ kubernetes-xenial main"
-      state: present
+    - name: Add Kubernetes APT repository
+      apt_repository:
+        repo: "deb http://apt.kubernetes.io/ kubernetes-xenial main"
+        state: present
 
-  - name: Installing required packages
-    apt:
-      name: "{{ item }}"
-      state: present
-      update_cache: yes
-    with_items: "{{ packages }}"
+    - name: Installing required packages
+      apt:
+        name: "{{ item }}"
+        state: present
+        update_cache: yes
+      loop: "{{ packages }}"  # Changed from `with_items` to `loop`
 
-  - name: Starting and Enabling the required services
-    service:
-      name: "{{ item }}"
-      state: started
-      enabled: yes
-    with_items: "{{ services }}"
+    - name: Starting and Enabling the required services
+      service:
+        name: "{{ item }}"
+        state: started
+        enabled: yes
+      loop: "{{ services }}"  # Changed from `with_items` to `loop`
 
-  - name: Allow Network Ports in UFW
-    ufw:
-      rule: allow
-      name: "{{ item }}"
-      state: enabled
-    with_items: "{{ ports }}"
+    - name: Allow Network Ports in UFW
+      ufw:
+        rule: allow
+        name: "{{ item }}"
+        state: enabled
+      loop: "{{ ports }}"  # Changed from `with_items` to `loop`
 
-  - name: Enabling Bridge Firewall Rule
-    sysctl:
-      name: net.bridge.bridge-nf-call-iptables
-      value: 1
-      state: present
-      reload: yes
+    - name: Enabling Bridge Firewall Rule
+      sysctl:
+        name: net.bridge.bridge-nf-call-iptables
+        value: 1
+        state: present
+        reload: yes
