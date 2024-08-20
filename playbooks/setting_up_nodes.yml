@@ -1,46 +1,42 @@
 ---
 - hosts: all
   vars_files:
-  - env_variables 
+  - env_variables
   tasks:
-  - name: Creating a repository file for Kubernetes
-    file:
-     path: /etc/yum.repos.d/kubernetes.repo
-     state: touch
+  - name: Add Kubernetes APT repository key
+    apt_key:
+      url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+      state: present
 
-  - name: Adding repository details in Kubernetes repo file.
-    blockinfile:
-     path: /etc/yum.repos.d/kubernetes.repo
-     block: |
-      [kubernetes]
-      name=Kubernetes
-      baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
-      enabled=1
-      gpgcheck=1
-      repo_gpgcheck=1
-      gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg
-        https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+  - name: Add Kubernetes APT repository
+    apt_repository:
+      repo: "deb http://apt.kubernetes.io/ kubernetes-xenial main"
+      state: present
 
   - name: Installing required packages
-    yum:
-     name: "{{ item }}"
-     state: present
+    apt:
+      name: "{{ item }}"
+      state: present
+      update_cache: yes
     with_items: "{{ packages }}"
 
   - name: Starting and Enabling the required services
     service:
-     name: "{{ item }}"
-     state: started
-     enabled: yes
+      name: "{{ item }}"
+      state: started
+      enabled: yes
     with_items: "{{ services }}"
 
-  - name: Allow Network Ports in Firewalld
-    firewalld:
-     port: "{{ item }}"
-     state: enabled
-     permanent: yes
-     immediate: yes
+  - name: Allow Network Ports in UFW
+    ufw:
+      rule: allow
+      name: "{{ item }}"
+      state: enabled
     with_items: "{{ ports }}"
 
   - name: Enabling Bridge Firewall Rule
-    shell: "echo '1' > /proc/sys/net/bridge/bridge-nf-call-iptables"
+    sysctl:
+      name: net.bridge.bridge-nf-call-iptables
+      value: 1
+      state: present
+      reload: yes
