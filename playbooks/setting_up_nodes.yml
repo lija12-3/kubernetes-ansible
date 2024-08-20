@@ -1,14 +1,7 @@
----
 - hosts: all
   vars_files:
     - env_variables
   tasks:
-    - name: Ensure gpg is installed
-      apt:
-        name: gnupg
-        state: present
-        update_cache: yes
-
     - name: Add Kubernetes APT repository key
       apt_key:
         url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
@@ -16,38 +9,29 @@
 
     - name: Add Kubernetes APT repository
       apt_repository:
-        repo: "deb https://apt.kubernetes.io/ kubernetes-bionic main"
+        repo: "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-bookworm main"
         state: present
-
-    - name: Clean APT cache
-      apt:
-        autoclean: yes
-        update_cache: yes
-
-    - name: Update APT cache
-      apt:
-        update_cache: yes
 
     - name: Installing required packages
       apt:
         name: "{{ item }}"
         state: present
         update_cache: yes
-      loop: "{{ packages }}"
+      loop: "{{ packages }}"  # Changed from `with_items` to `loop`
 
     - name: Starting and Enabling the required services
       service:
         name: "{{ item }}"
         state: started
         enabled: yes
-      loop: "{{ services }}"
+      loop: "{{ services }}"  # Changed from `with_items` to `loop`
 
     - name: Allow Network Ports in UFW
       ufw:
         rule: allow
         name: "{{ item }}"
         state: enabled
-      loop: "{{ ports }}"
+      loop: "{{ ports }}"  # Changed from `with_items` to `loop`
 
     - name: Enabling Bridge Firewall Rule
       sysctl:
