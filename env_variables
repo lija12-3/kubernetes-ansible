@@ -1,24 +1,22 @@
-#Edit these values only as per your environment
-#Enter your master node advertise ip address and cidr range for the pods.
+# Edit these values only as per your environment
+# Enter your master node advertise IP address and CIDR range for the pods.
 ad_addr: 192.168.2.1
 cidr_v: 172.16.0.0/16
 
 ###################################################################################
-# Dont Edit these below values, these are mandatory to configure kubernetes cluster
+# Don't Edit these below values, these are mandatory to configure the Kubernetes cluster
 packages:
-- docker
-- kubeadm
-- kubectl
+  - docker
+  - kubeadm
+  - kubectl
 
 services:
-- docker
-- kubelet
-- firewalld
+  - docker
+  - kubelet
 
-ports:
-- "6443/tcp"
-- "10250/tcp"
+# Since Debian uses UFW instead of Firewalld, this section is removed.
+# If UFW needs to be configured, you can add UFW-related tasks in the playbook.
 
 token_file: join_token
 ###################################################################################
-# Dont Edit these above values, these are mandatory to configure kubernetes cluster
+# Don't Edit these above values, these are mandatory to configure the Kubernetes cluster
